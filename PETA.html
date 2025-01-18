@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, user-scalable=no, maximum-scale=1, width=device-width" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <title>WebGIS</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+
+    <style>
+        /* Atur tinggi dan margin default untuk seluruh dokumen */
+        html,
+        body {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+          font-family: 'Arial', sans-serif; /* Ganti font default */
+          background-color: #f4f4f4; /* Tambahkan warna background untuk halaman */
+        }
+      
+        /* Gaya untuk elemen peta */
+        #map {
+          height: calc(100% - 60px); /* Kurangi tinggi navbar */
+          width: 100%; /* Lebar penuh */
+          margin: 0;
+          margin-top: 60px; /* Geser peta ke bawah sebesar tinggi navbar */
+          border: 5px solid #333; /* Tambahkan border pada peta */
+          border-radius: 10px; /* Beri sudut membulat */
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Tambahkan bayangan */
+        }
+      
+        /* Gaya untuk tooltip pada peta */
+        .leaflet-tooltip {
+          background: rgba(0, 0, 0, 0.8); /* Background gelap dengan transparansi */
+          border: 1px solid #fff; /* Tambahkan border putih */
+          color: #fff; /* Warna teks putih */
+          font-weight: bold; /* Teks tebal */
+          font-size: 14px; /* Ukuran font menengah */
+          padding: 5px 10px; /* Tambahkan ruang di dalam tooltip */
+          border-radius: 5px; /* Sudut membulat */
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Tambahkan bayangan pada teks */
+        }
+      
+        /* Tooltip saat di-hover */
+        .leaflet-tooltip.hover {
+          background: #ffd700; /* Warna kuning emas saat di-hover */
+          color: #000; /* Ubah warna teks menjadi hitam */
+        }
+      
+        /* Hilangkan segitiga pada tooltip */
+        .leaflet-tooltip::before {
+          display: none;
+        }
+      
+        /* Gaya untuk navbar */
+        #navbar {
+          background-color: #007bff; /* Warna biru navbar */
+          color: white; /* Warna teks putih */
+          padding: 15px;
+          font-size: 20px;
+          font-weight: bold; /* Teks tebal */
+          text-align: center; /* Teks di tengah */
+          position: fixed; /* Navbar tetap di atas */
+          top: 0;
+          left: 0;
+          width: 100%; /* Lebar penuh */
+          z-index: 1000; /* Pastikan navbar berada di atas elemen lainnya */
+          box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); /* Tambahkan bayangan bawah */
+        }
+      
+        /* Posisi tombol zoom Leaflet di bawah navbar */
+        .leaflet-top.leaflet-left {
+          top: 80px;
+        }
+      
+        /* Posisi kontrol layer di bawah navbar */
+        .leaflet-control-layers {
+          margin-top: 100px;
+        }
+      </style>
+      
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <div id="navbar">WebGIS Balai Desa Jakarta Utara</div>
+    <div id="map"></div>
+
+    <script>
+      // Initialize the map
+      var map = L.map("map").setView([-6.2, 106.8], 11);
+
+      // Tile Basemap
+      var Esri_WorldImagery = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Tiles &copy; Ajeng Fatmah, Universitas Islam Indonesia, PETA TITIK BALAI DESA JAKARTA UTARA",
+      });
+
+      var OpenStreetMap_France = L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
+        maxZoom: 20,
+        attribution: "Tiles &copy; Ajeng Fatmah, Universitas Islam Indonesia, PETA TITIK BALAI DESA JAKARTA UTARA",
+      });
+
+      var CyclOSM = L.tileLayer("https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png", {
+        maxZoom: 20,
+        attribution: "Tiles &copy; Ajeng Fatmah, Universitas Islam Indonesia, PETA TITIK BALAI DESA JAKARTA UTARA",
+      });
+
+      var Esri_WorldStreetMap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Tiles &copy; Ajeng Fatmah, Universitas Islam Indonesia, PETA TITIK BALAI DESA JAKARTA UTARA",
+      });
+
+      // Set the default layer
+      Esri_WorldImagery.addTo(map);
+
+      // Control Layer for switching between basemaps
+      var baseMaps = {
+        "Esri World Imagery": Esri_WorldImagery,
+        "Open Street Map France": OpenStreetMap_France,
+        "Cyc lOSM": CyclOSM,
+        "Esri WorldStreetMap": Esri_WorldStreetMap,
+      };
+
+      var markerLayer = L.layerGroup();
+
+      // Markers with custom icons
+      var customIcon = L.icon({
+        iconUrl: "building.svg",
+        iconSize: [60, 60],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40],
+      });
+
+      var markers = [
+        { coords: [-6.113089826179767, 106.89224431284521], name: "Balai Kota Administrasi Jakarta Utara", address: "VVHV+W37, Unnamed Road, RT.19/RW.5, Kebon Bawang, Tanjung Priok, North Jakarta City, Jakarta 14320" },
+        { coords: [-6.121625380566981, 106.90204313400254], name: "KANTOR RW.01 RAWABADAK UTARA", address: "VWG2+QQC, Jl. Anjungan, RT.1/RW.1, Rawabadak Utara, Kec. Koja, Jkt Utara, Daerah Khusus Ibukota Jakarta 14230" },
+        { coords: [-6.110443937988332, 106.89769221614156], name: "Koja Sub-District Office", address: "VVQX+32Q, Jl. Inspeksi Kali Sunter, RT.5/RW.9, Tanjung Priok, Jakarta Utara, Daerah Khusus Ibukota Jakarta 14350" },
+        { coords: [-6.139922785381388, 106.8740711878846], name: "Kantor RW 014", address: "Jl. Agung Perkasa 7 No.14, RW.14, Sunter Agung, Kec. Tj. Priok, Jkt Utara, Daerah Khusus Ibukota Jakarta 14350" },
+        { coords: [-6.115637952372343, 106.91006507677776], name: "KOJA DISTRICT OFFICE", address: "Jl. Mangga No.1, RT.1/RW.13, Lagoa, Kec. Koja, Jkt Utara, Daerah Khusus Ibukota Jakarta 14270" },
+        
+
+    ];
+
+      markers.forEach(function (marker) {
+        const markerInstance = L.marker(marker.coords, { icon: customIcon }).addTo(markerLayer);
+
+        // Bind tooltip (permanent, appears below marker)
+        const tooltip = markerInstance.bindTooltip(marker.name, { permanent: true, direction: "right", offset: [0, 0] }).getTooltip();
+
+        // Event untuk mengganti warna tooltip
+        markerInstance.on("mouseover", function () {
+          tooltip._container.classList.add("hover");
+        });
+
+        markerInstance.on("mouseout", function () {
+          tooltip._container.classList.remove("hover");
+        });
+
+        // Bind popup without close button
+        markerInstance.bindPopup("<b>" + marker.name + "</b><br>" + marker.address, { closeButton: false });
+
+        // Bind popup and show it on mouseover
+        markerInstance.on("mouseover", function () {
+          this.openPopup();
+        });
+        markerInstance.on("mouseout", function () {
+          this.closePopup();
+        });
+      });
+
+      // Kumpulkan semua koordinat marker ke dalam sebuah array
+      var hospitalCoordinates = markers.map((marker) => marker.coords);
+
+      // Buat polyline untuk menghubungkan semua marker
+      var hospitalRoute = L.polyline(hospitalCoordinates, {
+        color: "blue", // Warna garis
+        weight: 4, // Ketebalan garis
+        opacity: 0.7, // Transparansi garis
+      }).addTo(map);
+
+      // Zoom otomatis untuk melihat seluruh polyline
+      map.fitBounds(hospitalRoute.getBounds());
+
+      markerLayer.addTo(map);
+
+      var overlayMaps = {
+        "Hospital Routes": hospitalRoute, // Contoh jika ingin jalur bisa diaktifkan/nonaktifkan
+      };
+      
+// Hapus polyline dari peta
+map.removeLayer(hospitalRoute);
+
+
+      L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+    </script>
+  </body>
+</html>
